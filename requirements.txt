@@ -1,5 +1,8 @@
+gunicorn
 Flask
 ultralytics
 Pillow
 torch
 gdown
+
+
