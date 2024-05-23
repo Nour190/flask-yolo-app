@@ -1,25 +1,30 @@
-import os
 from flask import Flask, request, jsonify
 from ultralytics import YOLO
 from PIL import Image
 from io import BytesIO
 import base64
+import os
 import gdown
 
 app = Flask(__name__)
 
+# Google Drive URL and destination file path for `best.pt`
 gdrive_url = 'https://drive.google.com/uc?id=1nQ2iQN0YEr3NonL0D26xBYqX54o_DaDi'
 model_path = 'best.pt'
 
+# Function to download the model file
 def download_model(url, output):
     if not os.path.exists(output):
         gdown.download(url, output, quiet=False)
         print(f"Downloaded {output} from Google Drive")
 
+# Download the model
 download_model(gdrive_url, model_path)
+
+# Load your YOLO model
 model = YOLO(model_path)
 
-labels_file = 'labels.txt'
+labels_file = 'labels.txt'  # Path to your labels file
 
 @app.route('/', methods=['POST'])
 def detect_objects():
@@ -45,5 +50,4 @@ def read_labels_from_file(file_path):
     return labels
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True)
