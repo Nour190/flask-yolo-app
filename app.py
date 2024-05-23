@@ -3,45 +3,45 @@ from ultralytics import YOLO
 from PIL import Image
 from io import BytesIO
 import base64
+import os
+import gdown
 
 app = Flask(__name__)
 
+# Google Drive URL and destination file path for `best.pt`
+gdrive_url = 'https://drive.google.com/uc?id=1nQ2iQN0YEr3NonL0D26xBYqX54o_DaDi'
+model_path = 'best.pt'
+
+# Function to download the model file
+def download_model(url, output):
+    if not os.path.exists(output):
+        gdown.download(url, output, quiet=False)
+        print(f"Downloaded {output} from Google Drive")
+
+# Download the model
+download_model(gdrive_url, model_path)
+
 # Load your YOLO model
-model = YOLO('best.pt')
+model = YOLO(model_path)
 
 labels_file = 'labels.txt'  # Path to your labels file
 
 @app.route('/', methods=['POST'])
 def detect_objects():
-    # Check if the request contains an image
     if 'image' not in request.json:
         return jsonify({'error': 'No image provided'}), 400
 
-    # Decode base64-encoded image data
     base64_image = request.json['image']
     image_bytes = base64.b64decode(base64_image)
-
-    # Convert image data to PIL Image
     image = Image.open(BytesIO(image_bytes))
-
-    # Run inference on the image
     results = model(image)
-
-    # Read labels from the text file
     labels = read_labels_from_file(labels_file)
-
-    # Extract class IDs and convert them to labels
     detections = []
     for r in results:
-        class_ids = r.boxes.cls.cpu().numpy().tolist()   # Extract class IDs from the 6th column
-        class_labels = [labels[int(cls_id)] for cls_id in class_ids]  # Convert class IDs to labels
-
+        class_ids = r.boxes.cls.cpu().numpy().tolist()
+        class_labels = [labels[int(cls_id)] for cls_id in class_ids]
         for class_label in class_labels:
-            detection = {
-                'class_label': class_label,
-            }
-            detections.append(detection)
-
+            detections.append({'class_label': class_label})
     return jsonify({'detections': detections})
 
 def read_labels_from_file(file_path):
@@ -50,4 +50,4 @@ def read_labels_from_file(file_path):
     return labels
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
